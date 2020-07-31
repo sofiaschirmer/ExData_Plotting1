@@ -1,0 +1,78 @@
+#  Codes that creates the PNG file
+
+## First, we have to read the data ser from the file with the read.table() function
+
+t <- read.table("household_power_consumption.txt", header=TRUE, sep=";", na.strings = "?",
+    colClasses = c('character','character','numeric','numeric','numeric','numeric','numeric','numeric','numeric'))
+    
+## After this, you can format date to Type Date
+t$Date <- as.Date(t$Date, "%d/%m/%Y")
+## This function is used to convert between character representations and objects of class
+### We want this type dd/mm/yy
+
+## We will only be using data from the dates 2007-02-01 and 2007-02-02
+## So, we filter data set using the function subset()
+t <- subset(t,Date >= as.Date("2007-2-1") & Date <= as.Date("2007-2-2"))
+
+## Now we have to remove incomplete observation
+t <- t[complete.cases(t),]
+
+## And can combine Date and Time column to create a dataset for the plots using the function paste()
+dateTime <- paste(t$Date, t$Time)
+dateTime <- setNames(dateTime, "DateTime") #this is used to rename the vector
+t <- t[ ,!(names(t) %in% c("Date","Time"))] #we have two columns named "Date" and "Time", and we need to remove this 
+t <- cbind(dateTime, t) #DateTime column is added 
+t$dateTime <- as.POSIXct(dateTime) # use the function as.POSIXct() to convert objects of the other class and of class "Date" to these classes
+
+#Plot1
+##based on the example
+## we create an histogram using the hist() function, with the title "Global Active Power", xlab = "Global Active Power (kilowatts)", and color red
+hist(t$Global_active_power, main="Global Active Power", xlab = "Global Active Power (kilowatts)", col="red")
+#to save file and close device use dev.copy() and dev.off()
+dev.copy(png,"plot1.png", width=480, height=480)
+dev.off()
+
+#Plot2
+## we create an graph using the plot()function, but we want the global active power by week, xlab = "", ylab = "Global Active Power (kilowatts)"
+plot(t$Global_active_power~t$dateTime, type="l", ylab="Global Active Power (kilowatts)", xlab="")
+#to save file and close device use dev.copy() and dev.off()
+dev.copy(png,"plot2.png", width=480, height=480)
+dev.off()
+
+
+#Plot3
+## we have to create a graph based in a data set, so we use the function with() and plot()
+  with(t, { plot(Sub_metering_1~dateTime, type="l", ylab="Global Active Power (kilowatts)", xlab="")
+    lines(Sub_metering_2~dateTime,col='Red')
+    lines(Sub_metering_3~dateTime,col='Blue')})
+  legend("topright", col=c("black", "red", "blue"), lwd=c(1,1,1), 
+         c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+
+##to save file and close device use dev.copy() and dev.off()
+dev.copy(png, file="plot3.png", height=480, width=480)
+dev.off()
+
+#Plot4
+## to create a multiple graphi we have to use the par() function
+## oma =  vector of the form c(bottom, left, top, right) giving the size of the outer margins in lines of text
+### mar =  numerical vector of the form c(bottom, left, top, right) which gives the number of lines of margin to be specified on the four sides of the plot
+### nfrow = vector of the form c(nr, nc)
+
+par(mfrow=c(2,2), mar=c(4,4,2,1), oma=c(0,0,2,0))
+with(t, {
+  plot(Global_active_power~dateTime, type="l", 
+       ylab="Global Active Power (kilowatts)", xlab="")
+  plot(Voltage~dateTime, type="l", 
+       ylab="Voltage (volt)", xlab="")
+  plot(Sub_metering_1~dateTime, type="l", 
+       ylab="Global Active Power (kilowatts)", xlab="")
+  lines(Sub_metering_2~dateTime,col='Red')
+  lines(Sub_metering_3~dateTime,col='Blue')
+  legend("topright", col=c("black", "red", "blue"), lty=1, lwd=2, bty="n",
+         legend=c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+  plot(Global_reactive_power~dateTime, type="l", 
+       ylab="Global Rective Power (kilowatts)",xlab="")})
+
+##to save file and close device use dev.copy() and dev.off()
+dev.copy(png, file="plot_4.png", height=480, width=480)
+dev.off()
